@@ -1,0 +1,24 @@
+[workspace.package]
+description = "advent of code 2023"
+readme = "README.md"
+version = "46.0.0"
+edition = "2021"
+license = "MIT"
+authors = ["Matej Janežič <janezic.mj@gmail.com>"]
+repository = "https://git.janezic.dev/janezicmatej/aoc2023.git"
+
+[workspace]
+members = ["utils/download", "utils/scaffold"]
+
+[package]
+name = "aoc"
+description.workspace = true
+readme.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+
