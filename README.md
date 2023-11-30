@@ -2,6 +2,8 @@
 # Advent-of-Code 2023
 *This is a dumbed down version of [fspoettel/advent-of-code-rust](https://github.com/fspoettel/advent-of-code-rust) with some extra features*
 
+This project targets nightly build of rust, since some preview features are enabled
+
 ## Project overview
 
 ### Project structure
