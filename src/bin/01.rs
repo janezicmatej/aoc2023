@@ -1,18 +1,21 @@
 pub fn part_one(input: &str) -> Option<u32> {
     let mut c = 0;
+
     for line in input.lines() {
-        let mut itr = line.chars().filter(|x| x.is_ascii_digit());
+        let mut itr = line.chars().filter(char::is_ascii_digit);
 
-        let f = itr.next().unwrap();
-        let l = itr.last().unwrap_or(f);
+        let first = itr.next().unwrap();
+        let last = itr.last().unwrap_or(first);
 
-        c += format!("{f}{l}").parse::<u32>().unwrap();
+        c += format!("{first}{last}").parse::<u32>().unwrap();
     }
 
     Some(c)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
+    // NOTE:(matej) this solution is O(n^2) since we search string for each substring separately
+
     let mut c = 0;
     let nums = [
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
@@ -41,23 +44,26 @@ pub fn part_two(input: &str) -> Option<u32> {
                 last = (m.0, Some(idx + 1));
             }
         }
-        let mut itr = line.chars().enumerate().filter(|(_, x)| x.is_ascii_digit());
 
-        let Some(f) = itr.next() else {
-            c += format!("{}{}", first.1.unwrap(), last.1.unwrap())
-                .parse::<u32>()
-                .unwrap();
-            continue;
-        };
-        let l = itr.last().unwrap_or(f);
+        let mut itr = line
+            .chars()
+            .enumerate()
+            .filter(|(_, x)| x.is_ascii_digit())
+            .peekable();
 
-        if f.0 < first.0 {
-            first = (f.0, f.1.to_string().parse().ok());
+        if itr.peek().is_some() {
+            let f = itr.next().unwrap();
+            let l = itr.last().unwrap_or(f);
+
+            if f.0 < first.0 {
+                first = (f.0, f.1.to_string().parse().ok());
+            }
+
+            if l.0 >= last.0 {
+                last = (l.0, l.1.to_string().parse().ok());
+            }
         }
 
-        if l.0 >= last.0 {
-            last = (l.0, l.1.to_string().parse().ok());
-        }
         c += format!("{}{}", first.1.unwrap(), last.1.unwrap())
             .parse::<u32>()
             .unwrap();
