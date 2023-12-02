@@ -26,35 +26,19 @@ impl FromStr for Game {
 
 pub fn part_one(input: &str) -> Option<u32> {
     let games: Vec<Game> = to_vec(input, '\n');
+    let rules = [(12, "red"), (13, "green"), (14, "blue")];
 
-    let mut id_sum = 0;
-
-    'games: for g in games {
-        for (n, c) in g.balls {
-            match c.as_str() {
-                "blue" => {
-                    if n > 14 {
-                        continue 'games;
-                    }
-                }
-                "red" => {
-                    if n > 12 {
-                        continue 'games;
-                    }
-                }
-                "green" => {
-                    if n > 13 {
-                        continue 'games;
-                    }
-                }
-                _ => continue 'games,
-            }
-        }
-
-        id_sum += g.id;
-    }
-
-    Some(id_sum)
+    Some(
+        games
+            .iter()
+            .filter(|g| {
+                !g.balls
+                    .iter()
+                    .any(|(n, c)| rules.iter().any(|(rn, rc)| c == rc && n > rn))
+            })
+            .map(|g| g.id)
+            .sum(),
+    )
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
