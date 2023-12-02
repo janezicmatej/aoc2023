@@ -13,60 +13,34 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(c)
 }
 
+const NUMS: [&str; 9] = [
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
+
 pub fn part_two(input: &str) -> Option<u32> {
     // NOTE:(matej) this solution is O(n^2) since we search string for each substring separately
 
     let mut c = 0;
-    let nums = [
-        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    ];
+    let nums: Vec<(u32, String)> = (1..=9).zip(NUMS.into_iter().map(String::from)).collect();
 
     for line in input.lines() {
-        let mut first = (line.len(), None);
-        let mut last = (0, None);
+        let mut all_matches = Vec::new();
 
-        for (idx, n) in nums.iter().enumerate() {
-            let matches: Vec<_> = line.match_indices(n).collect();
-
-            if matches.is_empty() {
-                continue;
-            }
-
-            let m = matches.first().unwrap();
-
-            if m.0 < first.0 {
-                first = (m.0, Some(idx + 1));
-            }
-
-            let m = matches.last().unwrap();
-
-            if m.0 >= last.0 {
-                last = (m.0, Some(idx + 1));
-            }
+        for (n, str_n) in nums.iter() {
+            all_matches.extend(line.match_indices(str_n).map(|(x, _)| (x, *n)));
         }
 
-        let mut itr = line
-            .chars()
-            .enumerate()
-            .filter(|(_, x)| x.is_ascii_digit())
-            .peekable();
+        all_matches.extend(
+            line.chars()
+                .enumerate()
+                .filter(|(_, c)| c.is_ascii_digit())
+                .map(|(idx, c)| (idx, c.to_digit(10).unwrap())),
+        );
 
-        if itr.peek().is_some() {
-            let f = itr.next().unwrap();
-            let l = itr.last().unwrap_or(f);
+        let first = all_matches.iter().min_by_key(|&(idx, _)| idx).unwrap().1;
+        let last = all_matches.iter().max_by_key(|&(idx, _)| idx).unwrap().1;
 
-            if f.0 < first.0 {
-                first = (f.0, f.1.to_string().parse().ok());
-            }
-
-            if l.0 >= last.0 {
-                last = (l.0, l.1.to_string().parse().ok());
-            }
-        }
-
-        c += format!("{}{}", first.1.unwrap(), last.1.unwrap())
-            .parse::<u32>()
-            .unwrap();
+        c += first * 10 + last;
     }
 
     Some(c)
