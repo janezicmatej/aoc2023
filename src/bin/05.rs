@@ -1,6 +1,11 @@
-use std::{cmp::min, str::FromStr};
+use std::{
+    cmp::{max, min},
+    str::FromStr,
+};
 
 use aoc::parsers::to_vec;
+
+type PairRange = (u64, u64);
 
 #[derive(Debug)]
 struct Mapping {
@@ -29,45 +34,37 @@ impl Mapping {
         n >= self.source && n < self.source + self.range
     }
 
-    fn contains_any(&self, s: u64, r: u64) -> bool {
+    fn contains_any(&self, (s, r): PairRange) -> bool {
         s < self.source + self.range && s + r > self.source
     }
 
     fn map(&self, n: u64) -> u64 {
-        debug_assert!(self.contains(n));
         let shift = n - self.source;
         self.destination + shift
     }
 
-    fn map_range(&self, s: u64, r: u64) -> ((u64, u64), Vec<(u64, u64)>) {
-        debug_assert!(self.contains_any(s, r));
-        let shift = {
-            if self.contains(s) {
-                s - self.source
-            } else {
-                0
-            }
-        };
-        let neg_shift = {
-            if self.contains(s) {
-                0
-            } else {
-                self.source - s
-            }
-        };
-        let dest_start = self.destination + shift;
-        let dest_range = min(r - neg_shift, self.range - shift);
-        let mut rest = Vec::new();
+    fn split_range(&self, (s, r): PairRange) -> [Option<PairRange>; 3] {
+        let mut fences = [
+            s,
+            s + r,
+            max(self.source, s),
+            min(self.source + self.range, s + r),
+        ];
+        fences.sort();
 
-        if !self.contains(s) {
-            rest.push((s, self.source - s));
+        let mut v = Vec::new();
+
+        for i in 0..3 {
+            let f = fences[i];
+            let nf = fences[i + 1];
+            if f != nf {
+                v.push(Some((f, nf - f)))
+            } else {
+                v.push(None)
+            }
         }
 
-        if r - neg_shift > dest_range {
-            rest.push((self.source + self.range, r - dest_range))
-        }
-
-        ((dest_start, dest_range), rest)
+        v[..3].try_into().unwrap()
     }
 }
 
@@ -125,10 +122,14 @@ pub fn part_two(input: &str) -> Option<u64> {
 
         'queue: while let Some((s, r)) = seeds_ranges.pop() {
             for map in mapping {
-                if map.contains_any(s, r) {
-                    let (rng, rest) = map.map_range(s, r);
-                    new_ranges.push(rng);
-                    seeds_ranges.extend_from_slice(&rest);
+                if map.contains_any((s, r)) {
+                    let [pre, to_map, post] = map.split_range((s, r));
+                    let to_map = to_map.unwrap();
+                    let mapped = (map.map(to_map.0), to_map.1);
+                    new_ranges.push(mapped);
+                    for r in [pre, post].into_iter().flatten() {
+                        seeds_ranges.push(r);
+                    }
                     continue 'queue;
                 }
             }
