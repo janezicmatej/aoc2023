@@ -1,5 +1,3 @@
-use aoc::parsers::to_vec;
-
 fn win_options((time, distance): (u64, u64)) -> u64 {
     let discriminant = ((time.pow(2) - 4 * distance) as f64).sqrt();
 
@@ -14,28 +12,34 @@ fn win_options((time, distance): (u64, u64)) -> u64 {
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
-    let (upt, upd) = input.split_once('\n')?;
-    let time: Vec<u64> = to_vec(upt.strip_prefix("Time:      ")?, ' ');
-    let distance: Vec<u64> = to_vec(upd.strip_prefix("Distance:  ")?, ' ');
+    let [time, distance] = input
+        .lines()
+        .map(|l| {
+            l.split_whitespace()
+                .skip(1)
+                .filter_map(|n| n.parse().ok())
+                .collect::<Vec<u64>>()
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .ok()?;
 
     Some(time.into_iter().zip(distance).map(win_options).product())
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    let (upt, upd) = input.split_once('\n')?;
-    let time: u64 = upt
-        .strip_prefix("Time:      ")?
-        .split(' ')
-        .flat_map(|x| x.chars())
-        .collect::<String>()
-        .parse()
-        .ok()?;
-    let distance: u64 = upd
-        .strip_prefix("Distance:  ")?
-        .split(' ')
-        .flat_map(|x| x.chars())
-        .collect::<String>()
-        .parse()
+    let [time, distance] = input
+        .lines()
+        .filter_map(|l| {
+            l.split_whitespace()
+                .skip(1)
+                .flat_map(|x| x.chars())
+                .collect::<String>()
+                .parse()
+                .ok()
+        })
+        .collect::<Vec<_>>()
+        .try_into()
         .ok()?;
 
     Some(win_options((time, distance)))
