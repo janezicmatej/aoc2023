@@ -1,17 +1,33 @@
 use std::{
     cmp::{max, min},
+    fmt::Debug,
+    ops::RangeInclusive,
     str::FromStr,
 };
 
 use aoc::parsers::to_vec;
 
-type PairRange = (u64, u64);
+trait RangeInclusiveExt {
+    fn overlaps(&self, other: &Self) -> bool;
+}
+
+impl<T> RangeInclusiveExt for RangeInclusive<T>
+where
+    T: PartialOrd,
+{
+    fn overlaps(&self, other: &Self) -> bool {
+        self.contains(other.start()) || self.contains(other.end())
+    }
+}
+
+fn build_range(start: u64, range: u64) -> RangeInclusive<u64> {
+    start..=(start + range - 1)
+}
 
 #[derive(Debug)]
 struct Mapping {
-    destination: u64,
-    source: u64,
-    range: u64,
+    pub source: RangeInclusive<u64>,
+    pub destination: RangeInclusive<u64>,
 }
 
 struct ParseMappingError;
@@ -22,49 +38,43 @@ impl FromStr for Mapping {
         let nums: Vec<u64> = to_vec(s, ' ');
 
         Ok(Self {
-            destination: nums[0],
-            source: nums[1],
-            range: nums[2],
+            destination: build_range(nums[0], nums[2]),
+            source: build_range(nums[1], nums[2]),
         })
     }
 }
 
 impl Mapping {
-    fn contains(&self, n: u64) -> bool {
-        n >= self.source && n < self.source + self.range
-    }
-
-    fn contains_any(&self, (s, r): PairRange) -> bool {
-        s < self.source + self.range && s + r > self.source
-    }
-
     fn map(&self, n: u64) -> u64 {
-        let shift = n - self.source;
-        self.destination + shift
+        let shift = n - self.source.start();
+        self.destination.start() + shift
     }
 
-    fn split_range(&self, (s, r): PairRange) -> [Option<PairRange>; 3] {
+    fn map_range(&self, r: RangeInclusive<u64>) -> RangeInclusive<u64> {
+        self.map(*r.start())..=(self.map(*r.end()))
+    }
+
+    fn split_range(&self, r: RangeInclusive<u64>) -> [Option<RangeInclusive<u64>>; 3] {
         let mut fences = [
-            s,
-            s + r,
-            max(self.source, s),
-            min(self.source + self.range, s + r),
+            *r.start(),
+            *r.end() + 1,
+            max(*self.source.start(), *r.start()),
+            min(*self.source.end() + 1, *r.end() + 1),
         ];
+
         fences.sort();
 
-        let mut v = Vec::new();
+        const ARRAY_REPEAT_VALUE: Option<RangeInclusive<u64>> = None;
+        let mut v = [ARRAY_REPEAT_VALUE; 3];
 
         for i in 0..3 {
             let f = fences[i];
             let nf = fences[i + 1];
             if f != nf {
-                v.push(Some((f, nf - f)))
-            } else {
-                v.push(None)
+                v[i] = Some(f..=(nf - 1))
             }
         }
-
-        v[..3].try_into().unwrap()
+        v
     }
 }
 
@@ -95,7 +105,7 @@ pub fn part_one(input: &str) -> Option<u64> {
         let mut s = *seed;
         'maps: for map in maps.iter() {
             for inner in map.iter() {
-                if inner.contains(s) {
+                if inner.source.contains(&s) {
                     s = inner.map(s);
                     continue 'maps;
                 }
@@ -111,22 +121,19 @@ pub fn part_one(input: &str) -> Option<u64> {
 pub fn part_two(input: &str) -> Option<u64> {
     let (first, rest) = input.split_once("\n\n").unwrap();
     let maps = parse_map(rest);
-    let seeds = to_vec::<u64, _>(first.strip_prefix("seeds: ").unwrap(), ' ');
-    let mut seeds_ranges: Vec<_> = Vec::new();
-    for s in seeds.chunks(2) {
-        seeds_ranges.push((s[0], s[1]))
-    }
+    let mut seeds_ranges: Vec<_> = to_vec::<u64, _>(first.strip_prefix("seeds: ").unwrap(), ' ')
+        .chunks(2)
+        .map(|x| build_range(x[0], x[1]))
+        .collect();
 
     for mapping in maps.iter() {
         let mut new_ranges = Vec::new();
 
-        'queue: while let Some((s, r)) = seeds_ranges.pop() {
+        'queue: while let Some(rng) = seeds_ranges.pop() {
             for map in mapping {
-                if map.contains_any((s, r)) {
-                    let [pre, to_map, post] = map.split_range((s, r));
-                    let to_map = to_map.unwrap();
-                    let mapped = (map.map(to_map.0), to_map.1);
-                    new_ranges.push(mapped);
+                if map.source.overlaps(&rng) {
+                    let [pre, to_map, post] = map.split_range(rng);
+                    new_ranges.push(map.map_range(to_map.unwrap()));
                     for r in [pre, post].into_iter().flatten() {
                         seeds_ranges.push(r);
                     }
@@ -134,13 +141,17 @@ pub fn part_two(input: &str) -> Option<u64> {
                 }
             }
 
-            new_ranges.push((s, r));
+            new_ranges.push(rng);
         }
 
         seeds_ranges = new_ranges;
     }
 
-    seeds_ranges.iter().map(|(x, _)| *x).min()
+    seeds_ranges
+        .iter()
+        .map(RangeInclusive::start)
+        .min()
+        .copied()
 }
 
 aoc::solution!(5);
