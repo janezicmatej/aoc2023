@@ -54,3 +54,14 @@ pub fn read_file(folder: &str, day: u8) -> String {
     let f = fs::read_to_string(filepath);
     f.expect("could not open input file").trim().to_string()
 }
+
+#[must_use]
+pub fn read_file_part(folder: &str, day: u8, part: u8) -> String {
+    let cwd = env::current_dir().unwrap();
+    let filepath = cwd
+        .join("data")
+        .join(folder)
+        .join(format!("{day:02}-{part}.txt"));
+    let f = fs::read_to_string(filepath);
+    f.expect("could not open input file").trim().to_string()
+}
