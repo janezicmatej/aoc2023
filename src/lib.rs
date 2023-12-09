@@ -1,9 +1,9 @@
 #![feature(pattern)]
 
-use std::mem::swap;
-
 pub mod parsers;
 pub mod template;
+
+use std::mem::swap;
 
 pub fn lcm(first: usize, second: usize) -> usize {
     first * second / gcd(first, second)
