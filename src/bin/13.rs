@@ -1,23 +1,22 @@
-fn mirror_h(shape: &Vec<Vec<char>>, smudges: usize) -> Option<usize> {
-    (1..shape.len())
-        .filter(|&i| {
-            shape
-                .iter()
-                .skip(i)
-                .zip(shape.iter().take(i).rev())
-                .map(|(x, y)| {
-                    x.iter()
-                        .zip(y.iter())
-                        .map(|(xx, yy)| (xx != yy) as usize)
-                        .sum::<usize>()
-                })
-                .sum::<usize>()
-                == smudges
-        })
-        .max()
+fn mirror_h(shape: &[Vec<char>], smudges: usize) -> Option<usize> {
+    (1..shape.len()).find(|&i| {
+        shape
+            .iter()
+            .skip(i)
+            .zip(shape.iter().take(i).rev())
+            .map(|(x, y)| {
+                x.iter()
+                    .zip(y.iter())
+                    .map(|(xx, yy)| (xx != yy) as usize)
+                    .sum::<usize>()
+            })
+            .sum::<usize>()
+            == smudges
+    })
 }
-fn mirror_v(shape: &Vec<Vec<char>>, smudges: usize) -> Option<usize> {
-    let shape = (0..shape[0].len())
+
+fn mirror_v(shape: &[Vec<char>], smudges: usize) -> Option<usize> {
+    let shape: Vec<Vec<char>> = (0..shape[0].len())
         .map(|col| (0..shape.len()).map(|row| shape[row][col]).collect())
         .collect();
 
@@ -28,10 +27,9 @@ fn solve(input: &str, smudges: usize) -> usize {
     input
         .split("\n\n")
         .map(|x| x.lines().map(|line| line.chars().collect()).collect())
-        .map(|shape| {
-            let v = mirror_v(&shape, smudges).unwrap_or_default();
-            let h = mirror_h(&shape, smudges).unwrap_or_default();
-            v + h * 100
+        .map(|shape: Vec<Vec<char>>| {
+            mirror_v(&shape, smudges).unwrap_or_default()
+                + mirror_h(&shape, smudges).unwrap_or_default() * 100
         })
         .sum()
 }
