@@ -2,20 +2,16 @@ use std::collections::HashSet;
 
 fn parse_input(input: &str) -> (Vec<(usize, usize)>, HashSet<usize>, HashSet<usize>) {
     let mut galaxies = Vec::new();
-    let mut rows = HashSet::new();
-    let mut columns = HashSet::from_iter(1..(input.lines().next().unwrap().len()));
+    let mut rows = HashSet::from_iter(0..input.lines().count());
+    let mut columns = HashSet::from_iter(0..input.lines().next().unwrap().len());
 
     for (y, line) in input.lines().enumerate() {
-        let mut found = false;
         for (x, c) in line.chars().enumerate() {
             if c == '#' {
                 galaxies.push((y, x));
-                found = true;
+                rows.remove(&y);
+                columns.remove(&x);
             }
-            columns.remove(&x);
-        }
-        if !found {
-            rows.insert(y);
         }
     }
 
