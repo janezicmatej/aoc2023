@@ -24,7 +24,7 @@ fn swap<T: Copy>(floor: &mut [Vec<T>], from: (usize, usize), to: (usize, usize))
     floor[to.0][to.1] = a;
 }
 
-fn tilt(floor: &mut Vec<Vec<char>>, tilt: Tilt) {
+fn tilt(floor: &mut [Vec<char>], tilt: Tilt) {
     let (inner, outer) = match tilt {
         Tilt::North | Tilt::South => (floor[0].len(), floor.len()),
         Tilt::West | Tilt::East => (floor.len(), floor[0].len()),
@@ -54,7 +54,7 @@ fn tilt(floor: &mut Vec<Vec<char>>, tilt: Tilt) {
     }
 }
 
-fn tilt_cycle(floor: &mut Vec<Vec<char>>) {
+fn tilt_cycle(floor: &mut [Vec<char>]) {
     use Tilt::*;
     tilt(floor, North);
     tilt(floor, West);
