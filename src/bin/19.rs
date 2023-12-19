@@ -98,18 +98,18 @@ impl TryFrom<&str> for WorkflowInner {
     type Error = ParseWorkflowInnerError;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if !value.contains(':') {
-            return Ok(WorkflowInner::Resolver(Resolver::from(value)));
+            return Ok(WorkflowInner::Resolver(value.into()));
         }
 
         let (rest, resolver) = value.split_once(':').unwrap();
-        let resolver = Resolver::from(resolver);
+        let resolver = resolver.into();
 
         let (gear, number) = rest.split_once(|x| x == '<' || x == '>').unwrap();
-        let gear = Gear::try_from(gear).map_err(|_| ParseWorkflowInnerError)?;
+        let gear = gear.try_into().map_err(|_| ParseWorkflowInnerError)?;
         let number = number.parse().map_err(|_| ParseWorkflowInnerError)?;
 
         let comparator = if value.contains('<') { '<' } else { '>' };
-        let comparator = Comparator::try_from(comparator).map_err(|_| ParseWorkflowInnerError)?;
+        let comparator = comparator.try_into().map_err(|_| ParseWorkflowInnerError)?;
 
         Ok(WorkflowInner::Rule((gear, comparator, number, resolver)))
     }
@@ -301,7 +301,7 @@ fn build_map(input: &str) -> HashMap<&str, Workflow> {
         .lines()
         .filter_map(|x| x.strip_suffix('}'))
         .filter_map(|x| x.split_once('{'))
-        .filter_map(|(s, w)| Workflow::try_from(w).ok().map(|x| (s, x)))
+        .filter_map(|(s, w)| w.try_into().ok().map(|x| (s, x)))
     {
         map.insert(s, w);
     }
