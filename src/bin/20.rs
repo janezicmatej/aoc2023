@@ -80,7 +80,7 @@ fn parse_input(input: &str) -> Vec<Node> {
     nodes
 }
 
-pub fn cycle(input: &str, cycle_len: usize) -> (usize, usize) {
+pub fn cycle(input: &str, button_presses: Option<usize>) -> usize {
     let mut nodes = parse_input(input);
 
     let mut graph = vec![vec![false; nodes.len()]; nodes.len()];
@@ -95,8 +95,16 @@ pub fn cycle(input: &str, cycle_len: usize) -> (usize, usize) {
         .index;
 
     let mut hm = HashMap::new();
+    let critical_node = nodes[0].inputs.first().copied();
+    let critical_inputs = critical_node.map(|x| nodes[x].inputs.len());
 
-    for i in 1..=cycle_len {
+    for i in 1..=button_presses.unwrap_or(usize::MAX) {
+        if let Some(c) = critical_inputs {
+            if button_presses.is_none() && hm.values().len() == c {
+                return hm.values().copied().reduce(lcm).unwrap_or(0);
+            }
+        }
+
         let mut stack = VecDeque::from([(broadcaster, false)]);
 
         while let Some((index, signal)) = stack.pop_front() {
@@ -112,17 +120,17 @@ pub fn cycle(input: &str, cycle_len: usize) -> (usize, usize) {
             match node.module {
                 Module::Output => (),
                 Module::Broadcaster => {
-                    for dest_index in node.outputs.iter() {
-                        stack.push_back((*dest_index, false));
+                    for dest_index in node.outputs.iter().copied() {
+                        stack.push_back((dest_index, false));
                     }
                 }
                 Module::FlipFlop(high) => {
                     if !signal {
                         let signal = !high;
 
-                        for dest_index in nodes[index].outputs.iter() {
-                            graph[index][*dest_index] = signal;
-                            stack.push_back((*dest_index, signal));
+                        for dest_index in nodes[index].outputs.iter().copied() {
+                            graph[index][dest_index] = signal;
+                            stack.push_back((dest_index, signal));
                         }
 
                         new_module = Some(Module::FlipFlop(signal));
@@ -131,20 +139,23 @@ pub fn cycle(input: &str, cycle_len: usize) -> (usize, usize) {
                 Module::Conjuction => {
                     let mut all = true;
 
-                    for in_index in nodes[index].inputs.iter() {
-                        all &= graph[*in_index][index];
+                    for in_index in nodes[index].inputs.iter().copied() {
+                        all &= graph[in_index][index];
                     }
 
                     for dest_index in nodes[index].outputs.iter().copied() {
-                        if dest_index == 0 {
-                            for in_index in nodes[index].inputs.iter() {
-                                if graph[*in_index][index] {
-                                    hm.entry(*in_index).or_insert(i);
+                        graph[index][dest_index] = !all;
+                        stack.push_back((dest_index, !all));
+                    }
+
+                    if let Some(c) = critical_node {
+                        if index == c {
+                            for in_index in nodes[index].inputs.iter().copied() {
+                                if graph[in_index][index] {
+                                    hm.entry(in_index).or_insert(i);
                                 }
                             }
                         }
-                        graph[index][dest_index] = !all;
-                        stack.push_back((dest_index, !all));
                     }
                 }
             }
@@ -156,14 +167,14 @@ pub fn cycle(input: &str, cycle_len: usize) -> (usize, usize) {
         }
     }
 
-    (highs * lows, hm.values().copied().reduce(lcm).unwrap_or(0))
+    highs * lows
 }
 pub fn part_one(input: &str) -> Option<usize> {
-    Some(cycle(input, 1000).0)
+    Some(cycle(input, Some(1000)))
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    Some(cycle(input, 10_000).1)
+    Some(cycle(input, None))
 }
 
 aoc::solution!(20);
