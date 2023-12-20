@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, VecDeque},
     mem::swap,
-    process::Output,
     str::FromStr,
 };
 
@@ -80,7 +79,7 @@ fn parse_input(input: &str) -> Vec<Node> {
 pub fn part_one(input: &str) -> Option<usize> {
     let mut nodes = parse_input(input);
 
-    let mut graph = vec![vec![None; input.len()]; input.len()];
+    let mut graph = vec![vec![None; nodes.len()]; nodes.len()];
 
     let mut highs = 0;
     let mut lows = 0;
@@ -94,6 +93,7 @@ pub fn part_one(input: &str) -> Option<usize> {
         let mut stack = VecDeque::from([broadcaster]);
         while !stack.is_empty() {
             let mut new_stack = VecDeque::new();
+            let mut new_graph = graph.clone();
 
             while let Some(index) = stack.pop_front() {
                 let node = &nodes[index];
@@ -102,7 +102,7 @@ pub fn part_one(input: &str) -> Option<usize> {
                 match node.module {
                     Module::Broadcaster => {
                         for dest_index in node.outputs.iter() {
-                            graph[index][*dest_index] = Some(false);
+                            new_graph[index][*dest_index] = Some(false);
                             new_stack.push_back(*dest_index);
                             lows += 1;
                         }
@@ -121,7 +121,7 @@ pub fn part_one(input: &str) -> Option<usize> {
                             let signal = !high;
 
                             for dest_index in nodes[index].outputs.iter() {
-                                graph[index][*dest_index] = Some(signal);
+                                new_graph[index][*dest_index] = Some(signal);
                                 new_stack.push_back(*dest_index);
                                 if signal {
                                     highs += 1;
@@ -142,7 +142,7 @@ pub fn part_one(input: &str) -> Option<usize> {
                         }
 
                         for dest_index in nodes[index].outputs.iter() {
-                            graph[index][*dest_index] = Some(!all);
+                            new_graph[index][*dest_index] = Some(!all);
                             new_stack.push_back(*dest_index);
                             if !all {
                                 highs += 1;
@@ -160,6 +160,7 @@ pub fn part_one(input: &str) -> Option<usize> {
             }
 
             stack = new_stack;
+            graph = new_graph;
         }
     }
 
