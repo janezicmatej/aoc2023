@@ -21,4 +21,6 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+# so much for no dependencies this year, but I really cba so here it is
+z3 = { version = "0.12.1", features = [ "static-link-z3" ] }
 
